@@ -12,6 +12,23 @@ suits her colouring and body (or just duplicates something she owns), and what t
 wear for a given occasion. It worked well enough that it seemed worth opening up -
 stripped of anything personal - so anyone can run their own.
 
+## Screenshots
+
+A quick look at the kit. The standout is the **Palette** page - a full personal colour
+analysis that renders with zero wardrobe data, so it works the moment you deploy.
+
+![The Palette page - personal colour analysis with season header, axes card, colour-group swatches, neutrals, metals, and patterns.](docs/screenshots/palette.png)
+*Palette - your colour assessment: season, the colours that flatter you, neutrals, metals, and patterns.*
+
+![The "Where do I get a colour analysis?" popup, listing global options from Korean-method labs to free DIY guides.](docs/screenshots/palette-popup.png)
+*"Where do I get a colour analysis?" - a built-in guide to Korean-method labs, in-person analysts, and free DIY options.*
+
+![The Discover page - curated, shoppable archetype looks tuned to your style profile.](docs/screenshots/discover.jpg)
+*Discover - curated, shoppable archetype looks, each with editorial notes and direct links.*
+
+![The login screen - "The Wardrobe / Private" with a single passcode field.](docs/screenshots/login.png)
+*A single shared passcode gates the whole app.*
+
 ## Status: provided as-is, no support
 
 This is a starter kit, released as a gift to the community. It is the engine and
