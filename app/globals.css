@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #ffffff;
+  color: theme(colors.ink);
+}
+
+::selection {
+  background: theme(colors.ink);
+  color: #ffffff;
+}
+
+.eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: theme(colors.graphite);
+  font-weight: 400;
+}
+
+.navlink {
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: theme(colors.ink);
+}
+
+.btn-solid {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: theme(colors.ink);
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+  padding: 1rem 2rem;
+  border: 1px solid theme(colors.ink);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.btn-solid:hover {
+  background: #ffffff;
+  color: theme(colors.ink);
+}
+.btn-solid:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.underline-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid theme(colors.line);
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
+  outline: none;
+  border-radius: 0;
+}
+.underline-input:focus {
+  border-bottom-color: theme(colors.ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
