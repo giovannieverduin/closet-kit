@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { STYLE_PROFILE } from "./profile";
+import { STYLE_PROFILE, DEFAULT_ASSESSMENT, type ColorAssessment } from "./profile";
 import type { WardrobeItem } from "./notion";
 import { CATEGORIES, CATEGORY_HINT, COLOURS, DESIGNERS, FABRICS, OCCASIONS } from "./vocab";
 
@@ -450,4 +450,77 @@ If there are no fashion items, return [].`;
       category: it.category || null,
       colours: Array.isArray(it.colours) ? it.colours.map(String) : []
     }));
+}
+
+// Read a photo of a colour analysis (result sheet, draping fan, or a clear,
+// well-lit portrait) and return a structured ColorAssessment for the Palette page.
+export async function extractColorAssessment(
+  imageBase64: string,
+  mediaType: string
+): Promise<ColorAssessment> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY is not set");
+  const client = new Anthropic({ apiKey: key });
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
+
+  const system = `You are a professional seasonal colour analyst. From the supplied image — which may be a colour-analysis result sheet, a draping swatch fan, or a clear, well-lit photo of a person — produce a structured personal colour assessment. Infer the season and palette as a trained analyst would. Use real, usable hex values for every swatch. Be decisive but honest; if the image is a weak basis, still give your best reasoned assessment.
+
+Respond with ONLY a JSON object, no markdown, no preamble, matching exactly:
+{
+  "season": "e.g. Warm Spring, Cool Winter, Soft Summer",
+  "source": "short provenance line, e.g. 'Uploaded colour analysis'",
+  "toneLine": "exactly three words joined by ' · ', e.g. 'Warm · Clear · Light'",
+  "tagline": "one encouraging sentence addressed to 'you' about your palette",
+  "axes": [
+    {"dim":"Undertone / Hue","value":"..."},
+    {"dim":"Depth / Value","value":"..."},
+    {"dim":"Clarity / Chroma","value":"..."},
+    {"dim":"Contrast","value":"..."}
+  ],
+  "features": ["three short descriptors of colouring, e.g. 'Blue eyes'"],
+  "colorGroups": [
+    {"key":"flatter","label":"Colours that flatter you most","swatches":[{"name":"Coral","hex":"#FB7A5B"} (exactly 6)]},
+    {"key":"brights","label":"More clear brights","swatches":[6 swatches]},
+    {"key":"neutrals","label":"Your best neutrals","swatches":[6 swatches]},
+    {"key":"washout","label":"Colours that wash you out","tone":"avoid","swatches":[5 swatches]}
+  ],
+  "metals": [{"name":"Gold","hex":"#D4A92A","note":"short"} (3 to 4)],
+  "patterns": [{"name":"Floral","note":"short"} (3 to 4)]
+}`;
+
+  const res = await client.messages.create({
+    model,
+    max_tokens: 1600,
+    system,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mediaType as any, data: imageBase64 } },
+          { type: "text", text: "Analyse this and return my colour assessment as specified." }
+        ]
+      }
+    ]
+  });
+
+  const text = res.content
+    .map((b) => (b.type === "text" ? b.text : ""))
+    .join("")
+    .replace(/```json|```/g, "")
+    .trim();
+  const parsed = JSON.parse(text) as Partial<ColorAssessment>;
+
+  // Defensive: fall back to the example for any field the model omitted, so the
+  // Palette UI never renders an empty/broken section.
+  return {
+    season: parsed.season || DEFAULT_ASSESSMENT.season,
+    source: parsed.source || "Uploaded colour analysis",
+    toneLine: parsed.toneLine || DEFAULT_ASSESSMENT.toneLine,
+    tagline: parsed.tagline || DEFAULT_ASSESSMENT.tagline,
+    axes: parsed.axes?.length ? parsed.axes : DEFAULT_ASSESSMENT.axes,
+    features: parsed.features?.length ? parsed.features : DEFAULT_ASSESSMENT.features,
+    colorGroups: parsed.colorGroups?.length ? parsed.colorGroups : DEFAULT_ASSESSMENT.colorGroups,
+    metals: parsed.metals?.length ? parsed.metals : DEFAULT_ASSESSMENT.metals,
+    patterns: parsed.patterns?.length ? parsed.patterns : DEFAULT_ASSESSMENT.patterns
+  };
 }

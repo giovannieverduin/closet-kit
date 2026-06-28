@@ -122,3 +122,32 @@ export function paletteTier(colour: string): PaletteTier | null {
   if (CAUTION.has(colour)) return "caution";
   return null;
 }
+
+// ── Uploadable colour assessment ─────────────────────────────────────────
+// The shape the Palette page renders. Users can upload a photo of their own
+// colour analysis (see /api/assessment + PaletteView); until they do, the
+// DEFAULT below — assembled from the example profile above — is shown.
+// Client-safe (no server deps), so both the UI and the server can import it.
+export type ColorAssessment = {
+  season: string;
+  source: string;
+  toneLine: string; // e.g. "Warm · Clear · Light"
+  tagline: string;
+  axes: { dim: string; value: string }[];
+  features: string[];
+  colorGroups: { key: string; label: string; tone?: "avoid"; swatches: Swatch[] }[];
+  metals: Swatch[];
+  patterns: PatternRule[];
+};
+
+export const DEFAULT_ASSESSMENT: ColorAssessment = {
+  season: ANALYSIS.season,
+  source: ANALYSIS.source,
+  toneLine: "Warm · Clear · Light",
+  tagline: ANALYSIS.tagline,
+  axes: ANALYSIS.axes,
+  features: ANALYSIS.features,
+  colorGroups: COLOR_GROUPS,
+  metals: METALS,
+  patterns: PATTERNS,
+};

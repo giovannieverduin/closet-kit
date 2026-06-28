@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ANALYSIS, COLOR_GROUPS, METALS, PATTERNS } from "@/lib/profile";
+import { DEFAULT_ASSESSMENT, type ColorAssessment } from "@/lib/profile";
+import { fileToJpeg } from "@/lib/imageClient";
 
 function Swatches({ swatches, avoid }: { swatches: { name: string; hex: string; note?: string }[]; avoid?: boolean }) {
   return (
@@ -19,33 +23,118 @@ function Swatches({ swatches, avoid }: { swatches: { name: string; hex: string; 
 }
 
 export default function PaletteView() {
+  const [a, setA] = useState<ColorAssessment>(DEFAULT_ASSESSMENT);
+  const [custom, setCustom] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  // Load the active assessment (uploaded one, or the example default).
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/assessment")
+      .then((r) => r.json())
+      .then((j) => {
+        if (alive && j?.assessment) {
+          setA(j.assessment);
+          setCustom(Boolean(j.custom));
+        }
+      })
+      .catch(() => {/* keep default */});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { base64 } = await fileToJpeg(file);
+      const res = await fetch("/api/assessment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mediaType: "image/jpeg" })
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.error || "Upload failed");
+      setA(j.assessment);
+      setCustom(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onReset() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/assessment", { method: "DELETE" });
+      const j = await res.json();
+      setA(j.assessment || DEFAULT_ASSESSMENT);
+      setCustom(false);
+    } catch {
+      setError("Couldn't reset");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="max-w-md mx-auto">
       {/* Analysis header */}
       <div className="text-center">
         <p className="eyebrow mb-2">Personal colour analysis</p>
-        <h1 className="font-display text-5xl tracking-tight">{ANALYSIS.season}</h1>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-gold mt-2">Warm · Clear · Light</p>
-        <p className="eyebrow mt-2">{ANALYSIS.source}</p>
+        <h1 className="font-display text-5xl tracking-tight">{a.season}</h1>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-gold mt-2">{a.toneLine}</p>
+        <p className="eyebrow mt-2">{a.source}</p>
+      </div>
+
+      {/* Upload your own colour analysis */}
+      <div className="mt-6 flex flex-col items-center gap-2">
+        <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={onUpload} />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => fileInput.current?.click()}
+            disabled={busy}
+            className="navlink hover:text-graphite transition-colors disabled:opacity-40"
+          >
+            {busy ? "Reading…" : custom ? "Replace your analysis" : "Upload your colour analysis"}
+          </button>
+          {custom && !busy && (
+            <button onClick={onReset} className="navlink text-graphite hover:text-ink transition-colors">
+              Reset to example
+            </button>
+          )}
+        </div>
+        <p className="text-[10px] text-graphite text-center max-w-xs">
+          Upload a photo of your colour-analysis result, a draping swatch fan, or a clear, well-lit selfie.
+        </p>
+        {error && <p className="text-[11px] text-sale">{error}</p>}
       </div>
 
       {/* Analysis card */}
       <div className="border border-line p-5 mt-8 text-sm">
-        {ANALYSIS.axes.map((a) => (
-          <div key={a.dim} className="flex justify-between py-1.5">
-            <span className="text-graphite">{a.dim}</span>
-            <span>{a.value}</span>
+        {a.axes.map((ax) => (
+          <div key={ax.dim} className="flex justify-between py-1.5">
+            <span className="text-graphite">{ax.dim}</span>
+            <span>{ax.value}</span>
           </div>
         ))}
         <div className="border-t border-line mt-3 pt-3">
           <p className="eyebrow mb-1.5">Features</p>
-          <p className="text-xs text-graphite">{ANALYSIS.features.join(" · ")}</p>
+          <p className="text-xs text-graphite">{a.features.join(" · ")}</p>
         </div>
       </div>
 
       {/* Colour groups */}
       <div className="mt-10 space-y-9">
-        {COLOR_GROUPS.map((g) => (
+        {a.colorGroups.map((g) => (
           <section key={g.key}>
             <p className={`navlink border-b pb-2 mb-5 block ${g.tone === "avoid" ? "text-sale border-sale/30" : "border-line"}`}>
               {g.label}
@@ -57,14 +146,14 @@ export default function PaletteView() {
         {/* Metals & accessories */}
         <section>
           <p className="navlink border-b border-line pb-2 mb-5 block">Best metals &amp; accessories</p>
-          <Swatches swatches={METALS} />
+          <Swatches swatches={a.metals} />
         </section>
 
         {/* Patterns */}
         <section>
           <p className="navlink border-b border-line pb-2 mb-5 block">Patterns that suit you</p>
           <ul className="space-y-4">
-            {PATTERNS.map((p) => (
+            {a.patterns.map((p) => (
               <li key={p.name} className="flex gap-3">
                 <span className="text-[8px] mt-1.5 leading-none text-gold">●</span>
                 <span>
@@ -79,7 +168,7 @@ export default function PaletteView() {
 
       {/* Tagline */}
       <div className="border border-gold/40 bg-gold/5 p-4 mt-10 text-center text-sm text-graphite">
-        {ANALYSIS.tagline}
+        {a.tagline}
       </div>
 
       <div className="text-center mt-10 border-t border-line pt-8">
