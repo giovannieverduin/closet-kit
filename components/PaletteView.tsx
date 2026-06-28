@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DEFAULT_ASSESSMENT, type ColorAssessment } from "@/lib/profile";
 import { fileToJpeg } from "@/lib/imageClient";
+import { Modal } from "@/components/Modal";
+import { ANALYSIS_OPTIONS } from "@/lib/colorAnalysisOptions";
 
 function Swatches({ swatches, avoid }: { swatches: { name: string; hex: string; note?: string }[]; avoid?: boolean }) {
   return (
@@ -27,6 +29,7 @@ export default function PaletteView() {
   const [custom, setCustom] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showHelp, setShowHelp] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // Load the active assessment (uploaded one, or the example default).
@@ -115,6 +118,12 @@ export default function PaletteView() {
         <p className="text-[10px] text-graphite text-center max-w-xs">
           Upload a photo of your colour-analysis result, a draping swatch fan, or a clear, well-lit selfie.
         </p>
+        <button
+          onClick={() => setShowHelp(true)}
+          className="navlink text-gold hover:text-graphite transition-colors"
+        >
+          Where do I get a colour analysis? →
+        </button>
         {error && <p className="text-[11px] text-sale">{error}</p>}
       </div>
 
@@ -176,6 +185,37 @@ export default function PaletteView() {
           Try a new look →
         </Link>
       </div>
+
+      <Modal open={showHelp} onClose={() => setShowHelp(false)} title="Where to get your colour analysis" size="lg">
+        <p className="text-sm text-graphite mb-5">
+          A few ways to get your colours, anywhere in the world — from most rigorous to quickest. These are
+          well-known starting points, not endorsements.
+        </p>
+        <div className="space-y-5">
+          {ANALYSIS_OPTIONS.map((o) => (
+            <div key={o.name} className="border-b border-line pb-5 last:border-0 last:pb-0">
+              <p className="text-sm font-medium">{o.name}</p>
+              <p className="text-[11px] uppercase tracking-wide2 text-gold mt-1">{o.note}</p>
+              <p className="text-xs text-graphite mt-2 leading-relaxed">{o.blurb}</p>
+              {o.links && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
+                  {o.links.map((l) => (
+                    <a
+                      key={l.href}
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="navlink text-ink hover:text-graphite transition-colors"
+                    >
+                      {l.label} →
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Modal>
     </div>
   );
 }

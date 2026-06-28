@@ -63,7 +63,9 @@ replace it with your own in one of two ways:
 1. **Upload (recommended)** - on the Palette page, click *Upload your colour analysis* and
    give it a photo of your professional colour-analysis result, a draping swatch fan, or a
    clear, well-lit selfie. Claude reads it into a structured assessment, which is saved
-   (Vercel Blob) and drives the page from then on. *Reset to example* clears it.
+   (Vercel Blob) and drives the page from then on. *Reset to example* clears it. Not sure how
+   to get one? *Where do I get a colour analysis?* opens a global guide (Korean-method labs,
+   in-person analysts, free DIY guides) - edit the list in [`lib/colorAnalysisOptions.ts`](lib/colorAnalysisOptions.ts).
 2. **Edit the defaults** - the fallback assessment and the closet colour-tier hints live in
    [`lib/profile.ts`](lib/profile.ts); edit it to change the defaults in code.
 
