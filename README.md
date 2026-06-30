@@ -6,7 +6,7 @@ Fork it, point it at your own Notion, upload your colour analysis, and deploy. B
 
 ## Where this came from
 
-This started as a project I built for my wife to solve a couple of real, everyday
+This started as a project I built with my wife to solve a couple of real, everyday
 problems: knowing what's actually in her wardrobe, whether a new piece genuinely
 suits her colouring and body (or just duplicates something she owns), and what to
 wear for a given occasion. It worked well enough that it seemed worth opening up -
